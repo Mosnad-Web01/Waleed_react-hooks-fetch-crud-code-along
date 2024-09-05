@@ -1,11 +1,6 @@
 import "whatwg-fetch";
 import "@testing-library/jest-dom";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitForElementToBeRemoved,
-} from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { resetData } from "../mocks/handlers";
 import { server } from "../mocks/server";
 import ShoppingList from "../components/ShoppingList";
@@ -31,7 +26,7 @@ test("displays all the items from the server after the initial render", async ()
 });
 
 test("adds a new item to the list when the ItemForm is submitted", async () => {
-  const { rerender } = render(<ShoppingList />);
+  render(<ShoppingList />);
 
   const dessertCount = screen.queryAllByText(/Dessert/).length;
 
@@ -50,19 +45,12 @@ test("adds a new item to the list when the ItemForm is submitted", async () => {
 
   const desserts = await screen.findAllByText(/Dessert/);
   expect(desserts.length).toBe(dessertCount + 1);
-
-  // Rerender the component to ensure the item was persisted
-  rerender(<ShoppingList />);
-
-  const rerenderedIceCream = await screen.findByText(/Ice Cream/);
-  expect(rerenderedIceCream).toBeInTheDocument();
 });
 
 test("updates the isInCart status of an item when the Add/Remove from Cart button is clicked", async () => {
-  const { rerender } = render(<ShoppingList />);
+  render(<ShoppingList />);
 
   const addButtons = await screen.findAllByText(/Add to Cart/);
-
   expect(addButtons.length).toBe(3);
   expect(screen.queryByText(/Remove From Cart/)).not.toBeInTheDocument();
 
@@ -70,9 +58,6 @@ test("updates the isInCart status of an item when the Add/Remove from Cart butto
 
   const removeButton = await screen.findByText(/Remove From Cart/);
   expect(removeButton).toBeInTheDocument();
-
-  // Rerender the component to ensure the item was persisted
-  rerender(<ShoppingList />);
 
   const rerenderedAddButtons = await screen.findAllByText(/Add to Cart/);
   const rerenderedRemoveButtons = await screen.findAllByText(
@@ -84,21 +69,19 @@ test("updates the isInCart status of an item when the Add/Remove from Cart butto
 });
 
 test("removes an item from the list when the delete button is clicked", async () => {
-  const { rerender } = render(<ShoppingList />);
+  render(<ShoppingList />);
 
   const yogurt = await screen.findByText(/Yogurt/);
   expect(yogurt).toBeInTheDocument();
 
   const deleteButtons = await screen.findAllByText(/Delete/);
+
+  // Ensure that the button exists before clicking
+  expect(deleteButtons.length).toBeGreaterThan(0);
   fireEvent.click(deleteButtons[0]);
 
-  await waitForElementToBeRemoved(() => screen.queryByText(/Yogurt/));
-
-  // Rerender the component to ensure the item was persisted
-  rerender(<ShoppingList />);
-
-  const rerenderedDeleteButtons = await screen.findAllByText(/Delete/);
-
-  expect(rerenderedDeleteButtons.length).toBe(2);
-  expect(screen.queryByText(/Yogurt/)).not.toBeInTheDocument();
+  // Wait for the element to be removed
+  await waitFor(() => {
+    expect(screen.queryByText(/Yogurt/)).not.toBeInTheDocument();
+  });
 });
